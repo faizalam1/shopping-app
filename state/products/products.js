@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { removeItem } from "../cart/cart";
 
 
 const initialState = {
@@ -18,6 +19,7 @@ export const productsSlice = createSlice({
       state.products = state.products.filter(
         (product) => product.id !== action.payload.id
       );
+      removeItem(action.payload)
     },
     updateProduct: (state, action) => {
       state.products = state.products.map((product) => {

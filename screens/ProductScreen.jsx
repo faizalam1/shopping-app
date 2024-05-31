@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 const ProductScreen = ({ route }) => {
     const { productId } = route.params;
     const product = useSelector(state => state.products.products.find(p => p.id === productId));
+    const cartItems = useSelector(state => state.cart.items);
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const [password, setPassword] = useState('');
@@ -40,11 +41,18 @@ const ProductScreen = ({ route }) => {
                 <Text className="text-xl text-gray-600">${product.price}</Text>
                 <Text className="text-base mt-4">{product.description}</Text>
             </View>
+            {
+                cartItems.find(i => i.id === product.id) ? (
+                    <Text className="text-gray-600 text-center text-xl">Added</Text>
+                ) : (
+                    <View className="m-2">
+                        <Button title="Add to Cart" onPress={() => dispatch(addToCart(product))} />
+                    </View>
+                )
+            }
+            
             <View className="m-2">
-                <Button title="Add to Cart" onPress={() => dispatch(addToCart(product))} />
-            </View>
-            <View className="m-2">
-                <Button 
+                <Button
                     title="Edit Product"
                     onPress={handleEditProduct}
                 />
