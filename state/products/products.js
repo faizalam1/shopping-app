@@ -1,65 +1,145 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import axios from "axios";
 import { removeItem } from "../cart/cart";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export const getCategories = createAsyncThunk('products/getCategories', async () => {
+  const token = await AsyncStorage.getItem('token');
+  const response = await axios.get('http://192.168.10.2:5000/api/products/categories', {
+    headers: {
+      'x-auth-token': token
+    }
+  });
+  return response.data;
+});
+export const getProducts = createAsyncThunk(
+  "products/getProducts",
+  async () => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await axios.get("http://192.168.10.2:5000/api/products", {
+      headers: {
+        "x-auth-token": token,
+      },
+    });
+    return response.data;
+  }
+);
 
-const initialState = {
-  products: [],
-  status: "idle",
-  error: null,
-};
+export const addProduct = createAsyncThunk(
+  "products/addProduct",
+  async (product) => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await axios.post(
+      "http://192.168.10.2:5000/api/products",
+      product,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+    return response.data;
+  }
+);
 
-export const productsSlice = createSlice({
+export const removeProduct = createAsyncThunk(
+  "products/removeProduct",
+  async (id) => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await axios.delete(
+      `http://192.168.10.2:5000/api/products/${id}`,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+    return {id};
+  }
+);
+
+export const updateProduct = createAsyncThunk(
+  "products/updateProduct",
+  async (product) => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await axios.put(
+      `http://192.168.10.2:5000/api/products/${product.id}`,
+      product,
+      {
+        headers: {
+          "x-auth-token": token,
+        },
+      }
+    );
+    return response.data;
+  }
+);
+
+const productsSlice = createSlice({
   name: "products",
-  initialState,
+  initialState: {
+    products: [],
+    categories: [],
+    categoryFilter: null,
+    status: "idle",
+    error: null,
+  },
   reducers: {
-    addProduct: (state, action) => {
-      state.products = [...state.products, action.payload];
-    },
-    removeProduct: (state, action) => {
-      state.products = state.products.filter(
-        (product) => product.id !== action.payload.id
-      );
-      removeItem(action.payload)
-    },
-    updateProduct: (state, action) => {
-      state.products = state.products.map((product) => {
-        if (product.id !== action.payload.id) {
-          return product;
-        }
-        return { ...product, ...action.payload };
-      });
+    setCategoryFilter: (state, action) => {
+      state.categoryFilter = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-        .addCase(getProducts.pending, (state, action) => {
-            state.status = "loading";
-        })
-        .addCase(getProducts.fulfilled, (state, action) => {
-            state.status = "succeeded";
-            state.products = action.payload;
-        })
-        .addCase(getProducts.rejected, (state, action) => {
-            state.status = "failed";
-            state.error = action.error.message;
+      .addCase(getCategories.pending, (state, action) => {
+        state.status = "loading";
+      })
+      .addCase(getCategories.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.categories = action.payload;
+      })
+      .addCase(getProducts.pending, (state, action) => {
+        state.status = "loading";
+      })
+      .addCase(getProducts.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.products = action.payload;
+      })
+      .addCase(getProducts.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(addProduct.fulfilled, (state, action) => {
+        state.products = [...state.products, action.payload];
+      })
+      .addCase(removeProduct.fulfilled, (state, action) => {
+        state.products = state.products.filter(
+          (product) => product.id !== action.payload.id
+        );
+        removeItem(action.payload);
+      })
+      .addCase(updateProduct.fulfilled, (state, action) => {
+        state.products = state.products.map((product) => {
+          if (product.id !== action.payload.id) {
+            return product;
+          }
+          return { ...product, ...action.payload };
         });
+      })
+      .addCase(addProduct.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(removeProduct.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      });
   },
 });
 
-export const getProducts = createAsyncThunk(
-  "products/getProducts",
-  async () => {
-    const response = await fetch("https://fakestoreapi.com/products");
-    const data = await response.json();
-    //return data;
-    return [
-      { id: 1, title: "Product 1", description: "It is product 1.", price: 100 },
-      { id: 2, title: "Product 2", description: "It is product 2.", price: 200 },
-      { id: 3, title: "Product 3", description: "It is product 3.", price: 300 },
-    ];
-  }
-);
-
-export const { addProduct, removeProduct, updateProduct } =
-  productsSlice.actions;
+export const { setCategoryFilter } = productsSlice.actions;
 export default productsSlice.reducer;

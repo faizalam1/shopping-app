@@ -1,28 +1,40 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { View, Text, FlatList, Button, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, removeFromCart, clearCart } from '../state/cart/cart';
+import { createOrder, clearStatus } from '../state/orders/orders';
+import { getProducts } from '../state/products/products';
 
 const CartScreen = () => {
     const dispatch = useDispatch();
     const cartItems = useSelector(state => state.cart.items);
+    const orderStatus = useSelector(state => state.orders.status);
+    const orderError = useSelector(state => state.orders.error);
 
     const totalPrice = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
+    useEffect(() => {
+        if (orderStatus === 'succeeded') {
+            Alert.alert('Order Placed', 'Your order has been placed successfully');
+            dispatch(clearStatus());
+            dispatch(getProducts());
+            dispatch(clearCart());
+        }
+        if (orderStatus === 'failed') {
+            Alert.alert('Order Failed', orderError);
+            dispatch(clearStatus())
+        }
+    }, [orderStatus, orderError]);
+
     const checkout = async () => {
-        const response = await fetch('https://fakestoreapi.com/order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(cartItems)
-        });
-        // if (!response.ok) {
-        //     Alert.alert('Error', 'An error occurred while checking out');
-        //     return;
-        // }
-        // else
-        dispatch(clearCart());
+        if (cartItems.length === 0) {
+            return Alert.alert('Empty Cart', 'Add some products to cart before checking out');
+        }
+        const order = {
+            products: cartItems.map(item => ({ productId: item.id, quantity: item.quantity })),
+            totalAmount: totalPrice
+        }
+        dispatch(createOrder(order))
     }
 
     const handleCheckout = () => {
@@ -40,9 +52,9 @@ const CartScreen = () => {
 
     const renderItem = ({ item }) => (
         <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
-            <View>
+            <View className="w-60">
                 <Text className="text-xl">{item.title}</Text>
-                <Text className="text-gray-600">${item.price} x {item.quantity}</Text>
+                <Text className="text-gray-600">{item.price} x {item.quantity} PKR</Text>
             </View>
             <View className="flex flex-row">
                 <View className="m-2">

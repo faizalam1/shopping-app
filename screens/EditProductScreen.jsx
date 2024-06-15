@@ -8,38 +8,21 @@ const EditProductScreen = ({ route }) => {
     const { productId } = route.params;
     const product = useSelector(state => state.products.products.find(p => p.id === productId));
     const [title, setTitle] = useState(product?.title);
+    const [image, setImage] = useState(product?.image);
     const [description, setDescription] = useState(product?.description);
     const [price, setPrice] = useState(product?.price?.toString());
+    const [category, setCategory] = useState(product?.category);
+    const [stockCount, setStockCount] = useState(product?.stockCount.toString());
     const dispatch = useDispatch();
     const navigation = useNavigation();
 
     const handleSave = async () => {
-        dispatch(updateProduct({ id: productId, title, price: parseFloat(price) }));
-        const response = await fetch(`https://fakestoreapi.com/product?id=${productId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ title, price: parseFloat(price) })
-        });
-        // if (!response.ok) {
-        //     Alert.alert('Error', 'An error occurred while updating the product');
-        //     return;
-        // }
-        // else
+        dispatch(updateProduct({ id: productId, title, price: parseFloat(price), description, image, category, stockCount: parseInt(stockCount)}));
         navigation.goBack();
     };
 
     const deleteProduct = async () => {
-        const response = await fetch(`https://fakestoreapi.com/product?id=${productId}`, {
-            method: 'DELETE'
-        });
-        dispatch(removeProduct({ id: productId }));
-        // if (!response.ok) {
-        //     Alert.alert('Error', 'An error occurred while deleting the product');
-        //     return;
-        // }
-        // else
+        dispatch(removeProduct(productId));
         navigation.navigate('Home');
     }
 
@@ -67,6 +50,12 @@ const EditProductScreen = ({ route }) => {
             />
             <TextInput
                 className="border p-2 mt-4"
+                value={image}
+                onChangeText={setImage}
+                placeholder="Image URL"
+            />
+            <TextInput
+                className="border p-2 mt-4"
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Description"
@@ -78,6 +67,20 @@ const EditProductScreen = ({ route }) => {
                 placeholder="Price"
                 keyboardType="numeric"
             />
+            <TextInput
+                className="border p-2 mt-4"
+                value={category}
+                onChangeText={setCategory}
+                placeholder="Category"
+            />
+            <TextInput
+                className="border p-2 mt-4"
+                value={stockCount}
+                onChangeText={setStockCount}
+                placeholder="Stock Count"
+                keyboardType="numeric"
+            />
+                
             <View className="m-2 mt-8">
                 <Button title="Save" onPress={handleSave} />
             </View>
